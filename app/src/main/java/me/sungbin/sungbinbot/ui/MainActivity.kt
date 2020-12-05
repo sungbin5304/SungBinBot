@@ -1,9 +1,10 @@
-package me.sungbin.sungbinbot
+package me.sungbin.sungbinbot.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
+import com.sungbin.androidutils.util.DataUtil
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
+import me.sungbin.sungbinbot.util.PathManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -13,6 +14,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+
+        binding.swPower.setOnCheckedChangeListener { _, isChecked ->
+            DataUtil.saveData(applicationContext, PathManager.POWER, isChecked.toString())
+        }
+
+
     }
 }

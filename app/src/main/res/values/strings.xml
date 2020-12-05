@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SungBinBot</string>
+    <string name="image_description_clear_log">clear_log</string>
 </resources>
