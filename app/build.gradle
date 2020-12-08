@@ -53,4 +53,6 @@ dependencies {
     implementation 'com.github.sungbin5304:AndroidUtils:4.1.6'
     implementation 'com.github.sungbin5304:KakaoTalkBotBaseModule:1.0.5'
     implementation 'com.github.kimkevin:hangulparser:1.0.0'
+
+    implementation 'org.jsoup:jsoup:1.13.1'
 }

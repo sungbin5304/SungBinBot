@@ -1,5 +1,6 @@
 package me.sungbin.sungbinbot.ui
 
+import android.Manifest
 import android.app.Notification
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
@@ -8,10 +9,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import com.sungbin.androidutils.extensions.hide
 import com.sungbin.androidutils.extensions.show
-import com.sungbin.androidutils.util.DataUtil
-import com.sungbin.androidutils.util.ToastLength
-import com.sungbin.androidutils.util.ToastType
-import com.sungbin.androidutils.util.ToastUtil
+import com.sungbin.androidutils.util.*
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
@@ -32,6 +30,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         DataManager.init(applicationContext)
 
+        PermissionUtil.request(
+            this,
+            null,
+            arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        )
         bot.requestReadNotification()
 
         binding.swPower.isChecked =
@@ -72,6 +78,7 @@ class MainActivity : AppCompatActivity() {
             with(message) {
                 when {
                     contains(".살았니") -> action.reply("죽었다!")
+                    contains("한강") ->
                 }
             }
         }
