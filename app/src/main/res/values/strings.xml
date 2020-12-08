@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">SungBinBot</string>
+    <string name="delete">삭제</string>
+
     <string name="image_description_clear_log">clear_log</string>
+
+    <string name="main_clear_log">로그 삭제</string>
+    <string name="main_question_clear_log">정말 성빈봇 작동 로그를 삭제하시겠어요?</string>
+    <string name="main_cleared_log">작동 로그가 삭제되었어요.</string>
+    <string name="main_empty_log">성빈봇 작동 로그가 없어요</string>
 </resources>
