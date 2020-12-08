@@ -10,6 +10,7 @@
         tools:ignore="ScopedStorage" />
 
     <application
+        android:name=".SungBinBot"
         android:allowBackup="true"
         android:fullBackupContent="true"
         android:fullBackupOnly="true"

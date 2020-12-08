@@ -7,6 +7,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.extensions.hide
 import com.sungbin.androidutils.extensions.show
 import com.sungbin.androidutils.util.*
@@ -23,12 +25,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preLog: String
     private lateinit var binding: ActivityMainBinding
     private val bot = KakaoBot()
+    private val password = Firebase.remoteConfig.getString("password")
+    private val apiKey = Firebase.remoteConfig.getString("apiKey")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        DataManager.init(applicationContext)
 
         PermissionUtil.request(
             this,
