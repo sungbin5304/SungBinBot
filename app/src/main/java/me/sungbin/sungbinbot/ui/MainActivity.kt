@@ -16,6 +16,8 @@ import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.util.PathManager
 import org.json.JSONObject
 import org.jsoup.Jsoup
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private val bot by lazy { KakaoBot() }
     private val password by lazy { Firebase.remoteConfig.getString("password") }
     private val apiKey by lazy { Firebase.remoteConfig.getString("apiKey") }
+    private var runTime = System.currentTimeMillis()
+    private val showAll = "\u200b".repeat(500)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                                     ToastLength.SHORT,
                                     ToastType.WARNING
                                 )
-                            } else {
+                            } else { // 라이선스 확인 완료
                                 bot.setPower(true)
                                 ToastUtil.show(
                                     applicationContext,
@@ -69,31 +73,47 @@ class MainActivity : AppCompatActivity() {
                                     ToastLength.SHORT,
                                     ToastType.SUCCESS
                                 )
+                                NotificationUtil.showNormalNotification(
+                                    applicationContext,
+                                    1,
+                                    getString(R.string.app_name),
+                                    getString(R.string.main_bot_running),
+                                    R.mipmap.ic_launcher
+                                )
                                 DataUtil.saveData(applicationContext, PathManager.LICENSE, "true")
                                 DataUtil.saveData(applicationContext, PathManager.POWER, "true")
                             }
                         }
                         .setCancelable(false)
                         .show()
-                } else {
+                } else { // 켜짐
                     bot.setPower(true)
                     DataUtil.saveData(applicationContext, PathManager.POWER, "true")
+                    NotificationUtil.showNormalNotification(
+                        applicationContext,
+                        1,
+                        getString(R.string.app_name),
+                        getString(R.string.main_bot_running),
+                        R.mipmap.ic_launcher
+                    )
                 }
-            } else {
+            } else { // 꺼짐
                 bot.setPower(false)
                 DataUtil.saveData(applicationContext, PathManager.POWER, "false")
+                NotificationUtil.deleteNotification(applicationContext, 1)
             }
         }
 
         bot.setMessageReceiveListener { sender, message, room, isGroupChat, action, profileImage, packageName, bot ->
             try {
+                chatLog(room, sender, message)
                 with(message) {
                     when {
                         contains("살았니") || contains("죽었니") -> action.reply(
                             arrayOf(
                                 "죽었다!",
                                 "살았다!"
-                            )[(0..1).random()]
+                            ).random()
                         )
                         contains("한강") -> {
                             val data = getHtml("https://api.winsub.kr/hangang/?key=$apiKey")
@@ -104,13 +124,44 @@ class MainActivity : AppCompatActivity() {
                             val value = "$time 기준 현재 한강은 $temp 이에요!\n\n- $quote"
                             action.reply(value)
                         }
-                        contains("섹스") -> action.reply("하자")
+                        contains("섹스") -> action.reply(arrayOf("할래?", "하자").random())
+                        contains(".채팅로그") -> {
+                            val path = PathManager.LOG.replace("room", room)
+                            action.reply(
+                                "$room 방의 채팅로그에요!\n전체보기를 눌러주세요 :)$showAll" + (StorageUtil.read(
+                                    path,
+                                    "기록된 채팅로그가 없어요 :(",
+                                    true
+                                )
+                                    ?: "기록된 채팅로그가 없어요 :(")
+                            )
+                        }
                     }
                 }
             } catch (exception: Exception) {
                 action.reply("봇 작동중 오류가 발생했어요 ㅠㅠ\n\n$exception")
             }
         }
+    }
+
+    private fun chatLog(room: String, sender: String, message: String) {
+        if (PermissionUtil.checkPermissionsAllGrant(
+                applicationContext, arrayOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+            )
+        ) {
+            StorageUtil.createFolder("SungBinBot/ChatLog", true)
+        }
+
+        val path = PathManager.LOG.replace("room", room)
+        val preData = StorageUtil.read(path, "", true)
+        val timeFormat = SimpleDateFormat("MM월 dd일 kk시 mm분 ss초", Locale.KOREA)
+        val time = timeFormat.format(Date())
+        val value = "[$time] $sender\n$message"
+        val newData = preData + "\n\n" + value
+        StorageUtil.save(path, newData, true)
     }
 
     private fun log(string: String) = Log.w("AAAAA", string)
@@ -126,6 +177,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun Notification.Action.reply(message: String) {
-        bot.reply(this, message.trim())
+        if (System.currentTimeMillis() - runTime >= 1000) {
+            bot.reply(this, message.trim())
+            runTime = System.currentTimeMillis()
+        }
     }
 }
