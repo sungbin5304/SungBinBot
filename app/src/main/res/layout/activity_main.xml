@@ -48,65 +48,16 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ScrollView
-        android:id="@+id/sv_log_container"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="@dimen/margin_default"
-        android:overScrollMode="never"
-        android:visibility="gone"
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lav_empty"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abl_container">
-
-        <TextView
-            android:id="@+id/tv_log"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            tools:text="@string/app_name" />
-
-    </ScrollView>
-
-    <com.google.android.flexbox.FlexboxLayout
-        android:id="@+id/fbl_container"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:alignItems="center"
-        app:flexDirection="column"
-        app:justifyContent="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/abl_container">
-
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lav_empty"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:lottie_rawRes="@raw/empty" />
-
-        <TextView
-            android:id="@+id/tv_empty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/main_empty_log" />
-
-    </com.google.android.flexbox.FlexboxLayout>
-
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_clear_log"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/margin_default"
-        android:contentDescription="@string/image_description_clear_log"
-        android:src="@drawable/ic_baseline_clear_24"
-        app:backgroundTint="@color/colorPrimary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@color/colorWhite" />
+        app:layout_constraintTop_toBottomOf="@+id/abl_container"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/empty" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

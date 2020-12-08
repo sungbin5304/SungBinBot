@@ -1,11 +1,15 @@
 <resources>
+
     <string name="app_name">SungBinBot</string>
+
     <string name="delete">삭제</string>
+    <string name="ok">확인</string>
 
     <string name="image_description_clear_log">clear_log</string>
 
-    <string name="main_clear_log">로그 삭제</string>
-    <string name="main_question_clear_log">정말 성빈봇 작동 로그를 삭제하시겠어요?</string>
-    <string name="main_cleared_log">작동 로그가 삭제되었어요.</string>
-    <string name="main_empty_log">성빈봇 작동 로그가 없어요</string>
+    <string name="main_wrong_password">비밀번호가 틀렸습니다!</string>
+    <string name="main_input_password">비밀번호 입력</string>
+    <string name="main_hello">안녕하세요!</string>
+    <string name="main_request_permission">내부저장소 접근 권한 동의가 필요해요!</string>
+
 </resources>

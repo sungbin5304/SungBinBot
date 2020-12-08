@@ -19,7 +19,8 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.SungBinBot"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:replace="android:name">
 
         <activity android:name=".ui.MainActivity">
             <intent-filter>

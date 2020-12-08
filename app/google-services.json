@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "353460290709",
+    "project_id": "sungbinbot",
+    "storage_bucket": "sungbinbot.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353460290709:android:6e88a7feb388a0b34d079c",
+        "android_client_info": {
+          "package_name": "me.sungbin.sungbinbot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "353460290709-cbrqi3qktr80omq94u4siq82orlcl4rm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATrtLq8IJCZkRDTwxccjUfsi0arJMr2pI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "353460290709-cbrqi3qktr80omq94u4siq82orlcl4rm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
