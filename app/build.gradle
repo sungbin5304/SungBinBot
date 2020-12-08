@@ -50,5 +50,4 @@ dependencies {
     implementation 'com.github.sungbin5304:AndroidUtils:4.1.6'
     implementation 'com.github.sungbin5304:KakaoTalkBotBaseModule:1.0.4'
     implementation 'com.github.kimkevin:hangulparser:1.0.0'
-
 }
