@@ -2,8 +2,8 @@ package me.sungbin.sungbinbot.ui
 
 import android.Manifest
 import android.app.Notification
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +13,7 @@ import com.sungbin.androidutils.util.*
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
+import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.PathManager
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity() {
 
         bot.init(applicationContext)
         bot.requestReadNotification()
+        BatteryUtil.requestIgnoreBatteryOptimization(applicationContext)
 
         PermissionUtil.request(
             this,
@@ -73,13 +75,7 @@ class MainActivity : AppCompatActivity() {
                                     ToastLength.SHORT,
                                     ToastType.SUCCESS
                                 )
-                                NotificationUtil.showNormalNotification(
-                                    applicationContext,
-                                    1,
-                                    getString(R.string.app_name),
-                                    getString(R.string.main_bot_running),
-                                    R.mipmap.ic_launcher
-                                )
+                                startService(Intent(this, ForgroundService::class.java))
                                 DataUtil.saveData(applicationContext, PathManager.LICENSE, "true")
                                 DataUtil.saveData(applicationContext, PathManager.POWER, "true")
                             }
@@ -88,19 +84,13 @@ class MainActivity : AppCompatActivity() {
                         .show()
                 } else { // 켜짐
                     bot.setPower(true)
+                    startService(Intent(this, ForgroundService::class.java))
                     DataUtil.saveData(applicationContext, PathManager.POWER, "true")
-                    NotificationUtil.showNormalNotification(
-                        applicationContext,
-                        1,
-                        getString(R.string.app_name),
-                        getString(R.string.main_bot_running),
-                        R.mipmap.ic_launcher
-                    )
                 }
             } else { // 꺼짐
                 bot.setPower(false)
+                stopService(Intent(this, ForgroundService::class.java))
                 DataUtil.saveData(applicationContext, PathManager.POWER, "false")
-                NotificationUtil.deleteNotification(applicationContext, 1)
             }
         }
 
@@ -130,10 +120,8 @@ class MainActivity : AppCompatActivity() {
                             action.reply(
                                 "$room 방의 채팅로그에요!\n전체보기를 눌러주세요 :)$showAll" + (StorageUtil.read(
                                     path,
-                                    "기록된 채팅로그가 없어요 :(",
-                                    true
-                                )
-                                    ?: "기록된 채팅로그가 없어요 :(")
+                                    "기록된 채팅로그가 없어요 :("
+                                ) ?: "기록된 채팅로그가 없어요 :(")
                             )
                         }
                     }
@@ -152,19 +140,17 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         ) {
-            StorageUtil.createFolder("SungBinBot/ChatLog", true)
+            StorageUtil.createFolder("SungBinBot/ChatLog")
         }
 
         val path = PathManager.LOG.replace("room", room)
-        val preData = StorageUtil.read(path, "", true)
+        val preData = StorageUtil.read(path, "")
         val timeFormat = SimpleDateFormat("MM월 dd일 kk시 mm분 ss초", Locale.KOREA)
         val time = timeFormat.format(Date())
         val value = "[$time] $sender\n$message"
         val newData = preData + "\n\n" + value
-        StorageUtil.save(path, newData, true)
+        StorageUtil.save(path, newData)
     }
-
-    private fun log(string: String) = Log.w("AAAAA", string)
 
     private fun jsoupOf(address: String) = Jsoup.connect(address).ignoreContentType(true)
         .ignoreHttpErrors(true)
