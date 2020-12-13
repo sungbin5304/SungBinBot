@@ -10,10 +10,12 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.util.*
+import me.sungbin.gamepack.library.Game
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
+import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -28,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     private val apiKey by lazy { Firebase.remoteConfig.getString("apiKey") }
     private var runTime = System.currentTimeMillis()
     private val showAll = "\u200b".repeat(500)
+    private var chosungAnswer = ""
+    private val version = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,7 +47,10 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.main_request_permission),
             arrayOf(
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.FOREGROUND_SERVICE,
+                Manifest.permission.WAKE_LOCK,
+                Manifest.permission.INTERNET
             )
         )
 
@@ -110,12 +117,10 @@ class MainActivity : AppCompatActivity() {
                             val json = JSONObject(data)
                             val temp = json.getString("temp")
                             val time = json.getString("time").split("년 ")[1]
-                            val quote = json.getString("quote")
-                            val value = "$time 기준 현재 한강은 $temp 이에요!\n\n- $quote"
+                            val value = "$time 기준 현재 한강은 $temp 이에요!"
                             action.reply(value)
                         }
-                        contains("섹스") -> action.reply(arrayOf("할래?", "하자").random())
-                        contains(".채팅로그") -> {
+                        equals(".채팅로그") -> {
                             val path = PathManager.LOG.replace("room", room)
                             action.reply(
                                 "$room 방의 채팅로그에요!\n전체보기를 눌러주세요 :)$showAll" + (StorageUtil.read(
@@ -123,6 +128,39 @@ class MainActivity : AppCompatActivity() {
                                     "기록된 채팅로그가 없어요 :("
                                 ) ?: "기록된 채팅로그가 없어요 :(")
                             )
+                        }
+                        equals("초성게임") || equals("초성퀴즈") -> {
+                            if (chosungAnswer.isBlank()) {
+                                val quiz = Game.chosungQuiz()
+                                val type = quiz[0] as String
+                                val answer = quiz[1] as String
+                                val chosung = (quiz[2] as ArrayList<*>).joinToString("")
+                                val value =
+                                    "$type 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
+                                chosungAnswer = answer
+                                action.reply(value)
+                            } else {
+                                action.reply("이미 게임이 시작되어 있어요.")
+                            }
+                        }
+                        equals("즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
+                        equals("초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
+                        startsWith(".") && chosungAnswer.isNotBlank() -> {
+                            val input = message.replace(".", "")
+                            if (input == chosungAnswer) {
+                                action.reply("정답이에요!")
+                                chosungAnswer = ""
+                            } else {
+                                action.reply(
+                                    "땡! $input ${
+                                        KoreanUtil.getJongsung(
+                                            input,
+                                            "은",
+                                            "는"
+                                        )
+                                    } 정답이 아니에요."
+                                )
+                            }
                         }
                     }
                 }

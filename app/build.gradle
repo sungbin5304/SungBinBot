@@ -51,7 +51,8 @@ dependencies {
     implementation 'com.airbnb.android:lottie:3.5.0'
 
     implementation 'com.github.sungbin5304:AndroidUtils:4.2.0'
-    implementation 'com.github.sungbin5304:KakaoTalkBotBaseModule:1.0.6'
+    implementation 'com.github.sungbin5304:KakaoTalkBotBaseModule:1.0.7'
+    implementation 'com.github.sungbin5304:GamePack:1.0.0'
 
     implementation 'org.jsoup:jsoup:1.13.1'
 }
