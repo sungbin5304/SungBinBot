@@ -2,6 +2,7 @@ package me.sungbin.sungbinbot.ui
 
 import android.Manifest
 import android.app.Notification
+import android.app.RemoteInput
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
@@ -17,6 +18,7 @@ import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
+import me.sungbin.sungbinbot.util.RhinoUtil
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.text.SimpleDateFormat
@@ -28,10 +30,11 @@ class MainActivity : AppCompatActivity() {
     private val bot by lazy { KakaoBot() }
     private val password by lazy { Firebase.remoteConfig.getString("password") }
     private val apiKey by lazy { Firebase.remoteConfig.getString("apiKey") }
-    private var runTime = System.currentTimeMillis()
+    private var replyTime = System.currentTimeMillis()
     private val showAll = "\u200b".repeat(500)
     private var chosungAnswer = ""
-    private val version = 1
+    private var chosungHintCount = 0
+    private val version = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,8 +43,8 @@ class MainActivity : AppCompatActivity() {
 
         bot.init(applicationContext)
         bot.requestReadNotification()
-        BatteryUtil.requestIgnoreBatteryOptimization(applicationContext)
 
+        BatteryUtil.requestIgnoreBatteryOptimization(applicationContext)
         PermissionUtil.request(
             this,
             getString(R.string.main_request_permission),
@@ -106,6 +109,10 @@ class MainActivity : AppCompatActivity() {
                 chatLog(room, sender, message)
                 with(message) {
                     when {
+                        equals("A") -> action.reply("action.reply")
+                        equals("B") -> bot.reply(action, "bot.reply")
+                        equals("C") -> reply(action, "reply")
+                        equals("즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
                         contains("살았니") || contains("죽었니") -> action.reply(
                             arrayOf(
                                 "죽었다!",
@@ -143,13 +150,21 @@ class MainActivity : AppCompatActivity() {
                                 action.reply("이미 게임이 시작되어 있어요.")
                             }
                         }
-                        equals("즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
                         equals("초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
+                        equals("초성힌트") && chosungAnswer.isNotBlank() -> {
+                            if (chosungHintCount == chosungAnswer.length - 1) {
+                                action.reply("마지막 단어는 혼자서 해봐요!")
+                            } else {
+                                action.reply("정답의 ${chosungHintCount + 1}번째 글자는 ${chosungAnswer[chosungHintCount]} 이에요.")
+                                chosungHintCount++
+                            }
+                        }
                         startsWith(".") && chosungAnswer.isNotBlank() -> {
                             val input = message.replace(".", "")
                             if (input == chosungAnswer) {
                                 action.reply("정답이에요!")
                                 chosungAnswer = ""
+                                chosungHintCount = 0
                             } else {
                                 action.reply(
                                     "땡! $input ${
@@ -158,14 +173,21 @@ class MainActivity : AppCompatActivity() {
                                             "은",
                                             "는"
                                         )
-                                    } 정답이 아니에요."
+                                    } 정답이 아니에요.\n\n정답 유사도 : ${
+                                        RhinoUtil.checkSameWord(
+                                            input,
+                                            chosungAnswer
+                                        )
+                                    }%"
                                 )
                             }
                         }
+                        else -> Unit
                     }
                 }
             } catch (exception: Exception) {
                 action.reply("봇 작동중 오류가 발생했어요 ㅠㅠ\n\n$exception")
+                exception.printStackTrace()
             }
         }
     }
@@ -201,9 +223,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun Notification.Action.reply(message: String) {
-        if (System.currentTimeMillis() - runTime >= 1000) {
+        if (System.currentTimeMillis() - replyTime >= 1000) {
             bot.reply(this, message.trim())
-            runTime = System.currentTimeMillis()
+            replyTime = System.currentTimeMillis()
+        }
+    }
+
+    private fun reply(
+        action: Notification.Action,
+        message: String,
+        exception: (Exception) -> Unit = {}
+    ) {
+        try {
+            val sendIntent = Intent()
+            val msg = Bundle()
+            for (inputable in action.remoteInputs) msg.putCharSequence(
+                inputable.resultKey,
+                message
+            )
+            RemoteInput.addResultsToIntent(action.remoteInputs, sendIntent, msg)
+            action.actionIntent.send(applicationContext, 0, sendIntent)
+        } catch (exception: Exception) {
+            exception(exception)
         }
     }
 }
