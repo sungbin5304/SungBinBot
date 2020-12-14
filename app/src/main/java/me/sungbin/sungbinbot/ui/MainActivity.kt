@@ -50,7 +50,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        Logger.w("AAAA", KoreanUtil.checkSameWord("안녕하세요", "안냥하세요"))
+        Logger.w(koreanApiKey)
+        Word.init(applicationContext, koreanApiKey)
         binding.tvVersion.text = getString(R.string.main_version, version)
 
         bot.init(applicationContext)
@@ -124,11 +125,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 with(message) {
                     when {
-                        equals("A") -> action.reply("action.reply")
-                        equals("B") -> bot.reply(action, "bot.reply")
-                        equals("C") -> reply(action, "reply")
                         equals("즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
-                        contains("살았니") || contains("죽었니") -> action.reply(
+                        equals("살았니") || equals("죽었니") -> action.reply(
                             arrayOf(
                                 "죽었다!",
                                 "살았다!"
@@ -153,85 +151,99 @@ class MainActivity : AppCompatActivity() {
                                 action.reply("끝말잇기가 시작되었어요!\n\n,단어 로 게임을 진행해 주세요.")
                             }
                         }
-                        startsWith(",") && isWordChaining -> {
+                        startsWith(",") && isWordChaining && message.length >= 3 -> {
                             val input = message.replace(",", "")
                             val firstWord = input.first().toString()
-                            if (lastWord.isNotEmpty() && lastWord.contains(firstWord)) {
+                            if (Word.isRealWord(input)) {
                                 if (!Word.checkIsUsed(input)) {
-                                    val replyWord = Word.loadUseableWord(input)
-                                    if (replyWord != null) { // 사용 가능한 단어가 있을 때
-                                        val duum = Word.checkDuum(replyWord)
-                                        lastWord = if (duum != null) { // 두음 사용 가능함
-                                            arrayListOf(replyWord.last().toString(), duum)
-                                        } else {
-                                            arrayListOf(replyWord.last().toString())
+                                    if (lastWord.isNotEmpty() && lastWord.contains(firstWord)) {
+                                        Word.useWord(input)
+                                        val replyWord = Word.loadUseableWord(input)
+                                        if (replyWord != null) { // 사용 가능한 단어가 있을 때
+                                            val duum = Word.checkDuum(replyWord)
+                                            lastWord = if (duum != null) { // 두음 사용 가능함
+                                                arrayListOf(replyWord.last().toString(), duum)
+                                            } else {
+                                                arrayListOf(replyWord.last().toString())
+                                            }
+                                            action.reply(
+                                                "저는 $replyWord${
+                                                    KoreanUtil.getJongsung(
+                                                        replyWord,
+                                                        "을",
+                                                        "를"
+                                                    )
+                                                } 쓸게요!\n\n- ${Word.searchWord(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
+                                                    lastWord.join(
+                                                        " 또는 "
+                                                    )
+                                                }${
+                                                    KoreanUtil.getJongsung(
+                                                        lastWord.last(),
+                                                        "으로",
+                                                        "로"
+                                                    )
+                                                } 계속 진행해주세요 :)"
+                                            )
+                                        } else { // 사용 가능한 단어가 없을 때
+                                            action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                                            isWordChaining = false
+                                            lastWord.clear()
+                                            Word.clearUseWord()
                                         }
-                                        action.reply(
-                                            "저는 $replyWord ${
-                                                KoreanUtil.getJongsung(
-                                                    replyWord,
-                                                    "을",
-                                                    "를"
+                                    } else {
+                                        if (lastWord.isNotEmpty()) {
+                                            action.reply(
+                                                "${lastWord.join(" 또는 ")} ${
+                                                    KoreanUtil.getJongsung(
+                                                        lastWord.last(),
+                                                        "으로",
+                                                        "로"
+                                                    )
+                                                } 시작하는 단어를 입력해 주세요!"
+                                            )
+                                        } else {
+                                            Word.useWord(input)
+                                            val replyWord = Word.loadUseableWord(input)
+                                            if (replyWord != null) { // 사용 가능한 단어가 있을 때
+                                                val duum = Word.checkDuum(replyWord)
+                                                lastWord = if (duum != null) { // 두음 사용 가능함
+                                                    arrayListOf(replyWord.last().toString(), duum)
+                                                } else {
+                                                    arrayListOf(replyWord.last().toString())
+                                                }
+                                                action.reply(
+                                                    "저는 $replyWord${
+                                                        KoreanUtil.getJongsung(
+                                                            replyWord,
+                                                            "을",
+                                                            "를"
+                                                        )
+                                                    } 쓸게요!\n\n- ${Word.searchWord(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
+                                                        lastWord.join(
+                                                            " 또는 "
+                                                        )
+                                                    }${
+                                                        KoreanUtil.getJongsung(
+                                                            lastWord.last(),
+                                                            "으로",
+                                                            "로"
+                                                        )
+                                                    } 계속 진행해주세요 :)"
                                                 )
-                                            } 쓸게요!\n\n${lastWord.join(" 또는 ")} ${
-                                                KoreanUtil.getJongsung(
-                                                    lastWord.last(),
-                                                    "으로",
-                                                    "로"
-                                                )
-                                            } 게속 진행해주세요 :)"
-                                        )
-                                    } else { // 사용 가능한 단어가 없을 때
-                                        action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
-                                        isWordChaining = false
-                                        lastWord.clear()
-                                        Word.clearUseWord()
+                                            } else { // 사용 가능한 단어가 없을 때
+                                                action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                                                isWordChaining = false
+                                                lastWord.clear()
+                                                Word.clearUseWord()
+                                            }
+                                        }
                                     }
                                 } else {
                                     action.reply("헤당 단어($input)는 이미 사용되었어요!\n다른 단어를 입력해 주세요 :)")
                                 }
                             } else {
-                                if (lastWord.isNotEmpty()) {
-                                    action.reply(
-                                        "${lastWord.join(" 또는 ")} ${
-                                            KoreanUtil.getJongsung(
-                                                lastWord.last(),
-                                                "으로",
-                                                "로"
-                                            )
-                                        } 시작하는 단어를 입력해 주세요!"
-                                    )
-                                } else {
-                                    val replyWord = Word.loadUseableWord(input)
-                                    if (replyWord != null) { // 사용 가능한 단어가 있을 때
-                                        val duum = Word.checkDuum(replyWord)
-                                        lastWord = if (duum != null) { // 두음 사용 가능함
-                                            arrayListOf(replyWord.last().toString(), duum)
-                                        } else {
-                                            arrayListOf(replyWord.last().toString())
-                                        }
-                                        action.reply(
-                                            "저는 $replyWord ${
-                                                KoreanUtil.getJongsung(
-                                                    replyWord,
-                                                    "을",
-                                                    "를"
-                                                )
-                                            } 쓸게요!\n\n${lastWord.join(" 또는 ")} ${
-                                                KoreanUtil.getJongsung(
-                                                    lastWord.last(),
-                                                    "으로",
-                                                    "로"
-                                                )
-                                            } 게속 진행해주세요 :)"
-                                        )
-                                    } else { // 사용 가능한 단어가 없을 때
-                                        action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
-                                        isWordChaining = false
-                                        lastWord.clear()
-                                        Word.clearUseWord()
-                                    }
-                                }
+                                action.reply("해당 단어($input)는 없는 단어에요!\n다른 단어를 입력해 주세요 :)")
                             }
                         }
                         equals("초성게임") || equals("초성퀴즈") -> {
