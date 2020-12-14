@@ -12,5 +12,6 @@
     <string name="main_hello">안녕하세요!</string>
     <string name="main_request_permission">앱을 정상적으로 이용하기 위해선 권한 사용 동의가 필요해요!</string>
     <string name="main_bot_running">봇 작동중…</string>
+    <string name="main_version">버전 : %s</string>
 
 </resources>

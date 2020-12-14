@@ -10,8 +10,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.sungbin.androidutils.extensions.join
 import com.sungbin.androidutils.util.*
 import me.sungbin.gamepack.library.Game
+import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
@@ -26,20 +28,30 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
     private val bot by lazy { KakaoBot() }
-    private val password by lazy { Firebase.remoteConfig.getString("password") }
-    private val apiKey by lazy { Firebase.remoteConfig.getString("apiKey") }
-    private var replyTime = System.currentTimeMillis()
+    private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
+    private val licenseKey by lazy { Firebase.remoteConfig.getString("licenseKey") }
+    private val winSubApiKey by lazy { Firebase.remoteConfig.getString("winSubApiKey") }
+    private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
+
     private val showAll = "\u200b".repeat(500)
+    private var replyTime = System.currentTimeMillis()
+    private val timeFormat = SimpleDateFormat("MMddkk.mmss", Locale.KOREA)
+    private val version by lazy { timeFormat.format(Date()) }
+
+    // 초성게임
     private var chosungAnswer = ""
     private var chosungHintCount = 0
-    private val version = 3
+
+    // 끝말잇기
+    private var isWordChaining = false
+    private var lastWord = ArrayList<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.tvVersion.text = getString(R.string.main_version, version)
 
         bot.init(applicationContext)
         bot.requestReadNotification()
@@ -57,8 +69,12 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        binding.swPower.isChecked =
-            DataUtil.readData(applicationContext, PathManager.POWER, "false").toBoolean()
+        if (DataUtil.readData(applicationContext, PathManager.POWER, "false").toBoolean()) {
+            bot.setPower(true)
+            startService(Intent(this, ForgroundService::class.java))
+            binding.swPower.isChecked = true
+        }
+
         binding.swPower.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 if (!DataUtil.readData(applicationContext, PathManager.LICENSE, "false")
@@ -69,7 +85,7 @@ class MainActivity : AppCompatActivity() {
                         .setTitle(getString(R.string.main_input_password))
                         .setView(etPassword)
                         .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                            if (etPassword.text.toString() != password) {
+                            if (etPassword.text.toString() != licenseKey) {
                                 finish()
                                 ToastUtil.show(
                                     applicationContext,
@@ -78,13 +94,13 @@ class MainActivity : AppCompatActivity() {
                                     ToastType.WARNING
                                 )
                             } else { // 라이선스 확인 완료
-                                bot.setPower(true)
                                 ToastUtil.show(
                                     applicationContext,
                                     getString(R.string.main_hello),
                                     ToastLength.SHORT,
                                     ToastType.SUCCESS
                                 )
+                                bot.setPower(true)
                                 startService(Intent(this, ForgroundService::class.java))
                                 DataUtil.saveData(applicationContext, PathManager.LICENSE, "true")
                                 DataUtil.saveData(applicationContext, PathManager.POWER, "true")
@@ -106,7 +122,6 @@ class MainActivity : AppCompatActivity() {
 
         bot.setMessageReceiveListener { sender, message, room, isGroupChat, action, profileImage, packageName, bot ->
             try {
-                chatLog(room, sender, message)
                 with(message) {
                     when {
                         equals("A") -> action.reply("action.reply")
@@ -120,28 +135,111 @@ class MainActivity : AppCompatActivity() {
                             ).random()
                         )
                         contains("한강") -> {
-                            val data = getHtml("https://api.winsub.kr/hangang/?key=$apiKey")
+                            val data = getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
                             val json = JSONObject(data)
                             val temp = json.getString("temp")
                             val time = json.getString("time").split("년 ")[1]
                             val value = "$time 기준 현재 한강은 $temp 이에요!"
                             action.reply(value)
                         }
-                        equals(".채팅로그") -> {
-                            val path = PathManager.LOG.replace("room", room)
-                            action.reply(
-                                "$room 방의 채팅로그에요!\n전체보기를 눌러주세요 :)$showAll" + (StorageUtil.read(
-                                    path,
-                                    "기록된 채팅로그가 없어요 :("
-                                ) ?: "기록된 채팅로그가 없어요 :(")
-                            )
+                        equals("끝말잇기") -> {
+                            if (isWordChaining) {
+                                action.reply("끝말잇기가 종료되었어요.")
+                                isWordChaining = false
+                                lastWord.clear()
+                                Word.clearUseWord()
+                            } else {
+                                isWordChaining = true
+                                action.reply("끝말잇기가 시작되었어요!\n\n,단어 로 게임을 진행해 주세요.")
+                            }
+                        }
+                        startsWith(",") && isWordChaining -> {
+                            val input = message.replace(",", "")
+                            val firstWord = input.first().toString()
+                            if (lastWord.isNotEmpty() && lastWord.contains(firstWord)) {
+                                if (!Word.checkIsUsed(input)) {
+                                    val replyWord = Word.loadUseableWord(input)
+                                    if (replyWord != null) { // 사용 가능한 단어가 있을 때
+                                        val duum = Word.checkDuum(replyWord)
+                                        lastWord = if (duum != null) { // 두음 사용 가능함
+                                            arrayListOf(replyWord.last().toString(), duum)
+                                        } else {
+                                            arrayListOf(replyWord.last().toString())
+                                        }
+                                        action.reply(
+                                            "저는 $replyWord ${
+                                                KoreanUtil.getJongsung(
+                                                    replyWord,
+                                                    "을",
+                                                    "를"
+                                                )
+                                            } 쓸게요!\n\n${lastWord.join(" 또는 ")} ${
+                                                KoreanUtil.getJongsung(
+                                                    lastWord.last(),
+                                                    "으로",
+                                                    "로"
+                                                )
+                                            } 게속 진행해주세요 :)"
+                                        )
+                                    } else { // 사용 가능한 단어가 없을 때
+                                        action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                                        isWordChaining = false
+                                        lastWord.clear()
+                                        Word.clearUseWord()
+                                    }
+                                } else {
+                                    action.reply("헤당 단어($input)는 이미 사용되었어요!\n다른 단어를 입력해 주세요 :)")
+                                }
+                            } else {
+                                if (lastWord.isNotEmpty()) {
+                                    action.reply(
+                                        "${lastWord.join(" 또는 ")} ${
+                                            KoreanUtil.getJongsung(
+                                                lastWord.last(),
+                                                "으로",
+                                                "로"
+                                            )
+                                        } 시작하는 단어를 입력해 주세요!"
+                                    )
+                                } else {
+                                    val replyWord = Word.loadUseableWord(input)
+                                    if (replyWord != null) { // 사용 가능한 단어가 있을 때
+                                        val duum = Word.checkDuum(replyWord)
+                                        lastWord = if (duum != null) { // 두음 사용 가능함
+                                            arrayListOf(replyWord.last().toString(), duum)
+                                        } else {
+                                            arrayListOf(replyWord.last().toString())
+                                        }
+                                        action.reply(
+                                            "저는 $replyWord ${
+                                                KoreanUtil.getJongsung(
+                                                    replyWord,
+                                                    "을",
+                                                    "를"
+                                                )
+                                            } 쓸게요!\n\n${lastWord.join(" 또는 ")} ${
+                                                KoreanUtil.getJongsung(
+                                                    lastWord.last(),
+                                                    "으로",
+                                                    "로"
+                                                )
+                                            } 게속 진행해주세요 :)"
+                                        )
+                                    } else { // 사용 가능한 단어가 없을 때
+                                        action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                                        isWordChaining = false
+                                        lastWord.clear()
+                                        Word.clearUseWord()
+                                    }
+                                }
+                            }
                         }
                         equals("초성게임") || equals("초성퀴즈") -> {
                             if (chosungAnswer.isBlank()) {
                                 val quiz = Game.chosungQuiz()
                                 val type = quiz[0] as String
                                 val answer = quiz[1] as String
-                                val chosung = (quiz[2] as ArrayList<*>).joinToString("")
+                                val chosung = (quiz[2] as ArrayList<*>).join("")
                                 val value =
                                     "$type 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
                                 chosungAnswer = answer
@@ -186,30 +284,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (exception: Exception) {
-                action.reply("봇 작동중 오류가 발생했어요 ㅠㅠ\n\n$exception")
+                action.reply("봇 작동중 오류가 발생했어요 \uD83D\uDE2D\n\n$exception")
                 exception.printStackTrace()
             }
         }
-    }
-
-    private fun chatLog(room: String, sender: String, message: String) {
-        if (PermissionUtil.checkPermissionsAllGrant(
-                applicationContext, arrayOf(
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-            )
-        ) {
-            StorageUtil.createFolder("SungBinBot/ChatLog")
-        }
-
-        val path = PathManager.LOG.replace("room", room)
-        val preData = StorageUtil.read(path, "")
-        val timeFormat = SimpleDateFormat("MM월 dd일 kk시 mm분 ss초", Locale.KOREA)
-        val time = timeFormat.format(Date())
-        val value = "[$time] $sender\n$message"
-        val newData = preData + "\n\n" + value
-        StorageUtil.save(path, newData)
     }
 
     private fun jsoupOf(address: String) = Jsoup.connect(address).ignoreContentType(true)
