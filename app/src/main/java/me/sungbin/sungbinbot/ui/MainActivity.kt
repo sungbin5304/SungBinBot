@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
                                                         "을",
                                                         "를"
                                                     )
-                                                } 쓸게요!\n\n- ${Word.searchWord(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
+                                                } 쓸게요!\n\n- ${Word.getWordMean(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
                                                     lastWord.join(
                                                         " 또는 "
                                                     )
@@ -219,7 +219,7 @@ class MainActivity : AppCompatActivity() {
                                                             "을",
                                                             "를"
                                                         )
-                                                    } 쓸게요!\n\n- ${Word.searchWord(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
+                                                    } 쓸게요!\n\n- ${Word.getWordMean(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
                                                         lastWord.join(
                                                             " 또는 "
                                                         )
