@@ -20,6 +20,7 @@ import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
+import me.sungbin.sungbinbot.util.Util
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.text.SimpleDateFormat
@@ -131,6 +132,13 @@ class MainActivity : AppCompatActivity() {
                                 "죽었다!",
                                 "살았다!"
                             ).random()
+                        )
+                        equals("배터리") -> action.reply(
+                            "현재 저의 수명은 ${
+                                Util.getBatteryPercentage(
+                                    applicationContext
+                                )
+                            }% 만큼 남았어요!"
                         )
                         contains("한강") -> {
                             val data = getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
