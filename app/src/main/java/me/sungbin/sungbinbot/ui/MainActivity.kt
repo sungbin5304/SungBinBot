@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     private val showAll = "\u200b".repeat(500)
     private var replyTime = System.currentTimeMillis()
-    private val timeFormat = SimpleDateFormat("MMddkk.mmss", Locale.KOREA)
+    private val timeFormat = SimpleDateFormat("yyMMdd.kkmmss", Locale.KOREA)
     private val version by lazy { timeFormat.format(Date()) }
 
     // 초성게임
