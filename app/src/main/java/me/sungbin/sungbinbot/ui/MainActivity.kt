@@ -20,7 +20,6 @@ import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
-import me.sungbin.sungbinbot.util.RhinoUtil
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.text.SimpleDateFormat
@@ -51,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
+        Logger.w("AAAA", KoreanUtil.checkSameWord("안녕하세요", "안냥하세요"))
         binding.tvVersion.text = getString(R.string.main_version, version)
 
         bot.init(applicationContext)
@@ -272,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                                             "는"
                                         )
                                     } 정답이 아니에요.\n\n정답 유사도 : ${
-                                        RhinoUtil.checkSameWord(
+                                        KoreanUtil.checkSameWord(
                                             input,
                                             chosungAnswer
                                         )

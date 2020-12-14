@@ -5,6 +5,7 @@ import android.os.StrictMode
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.util.NotificationUtil
+import me.sungbin.gamepack.library.game.wordchain.Word
 
 
 /**
@@ -17,6 +18,7 @@ class SungBinBot : Application() {
         super.onCreate()
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build() // 이거 하면 안되는데...
         StrictMode.setThreadPolicy(policy)
+        Word.init(applicationContext)
         Firebase.remoteConfig.fetchAndActivate()
         NotificationUtil.createChannel(
             applicationContext,
