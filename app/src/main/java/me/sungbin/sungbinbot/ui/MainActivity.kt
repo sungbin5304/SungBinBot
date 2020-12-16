@@ -122,25 +122,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // todo: 엑티비티에서 다 처리하면 안되는데;;;;;
         bot.setMessageReceiveListener { sender, message, room, isGroupChat, action, profileImage, packageName, bot ->
             try {
                 with(message) {
                     when {
-                        equals("즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
-                        equals("살았니") || equals("죽었니") -> action.reply(
+                        equals(".즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
+                        equals(".살았니") || equals(".죽었니") -> action.reply(
                             arrayOf(
                                 "죽었다!",
                                 "살았다!"
                             ).random()
                         )
-                        equals("배터리") -> action.reply(
+                        equals(".배터리") -> action.reply(
                             "현재 저의 수명은 ${
                                 Util.getBatteryPercentage(
                                     applicationContext
                                 )
                             }% 만큼 남았어요!"
                         )
-                        contains("한강") -> {
+                        equals(".한강") -> {
                             val data = getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
                             val json = JSONObject(data)
                             val temp = json.getString("temp")
@@ -148,7 +149,7 @@ class MainActivity : AppCompatActivity() {
                             val value = "$time 기준 현재 한강은 $temp 이에요!"
                             action.reply(value)
                         }
-                        equals("끝말잇기") -> {
+                        equals(".끝말잇기") -> {
                             if (isWordChaining) {
                                 action.reply("끝말잇기가 종료되었어요.")
                                 isWordChaining = false
@@ -254,7 +255,7 @@ class MainActivity : AppCompatActivity() {
                                 action.reply("해당 단어($input)는 없는 단어에요!\n다른 단어를 입력해 주세요 :)")
                             }
                         }
-                        equals("초성게임") || equals("초성퀴즈") -> {
+                        equals(".초성게임") || equals(".초성퀴즈") -> {
                             if (chosungAnswer.isBlank()) {
                                 val quiz = Game.chosungQuiz()
                                 val type = quiz[0] as String
@@ -268,8 +269,8 @@ class MainActivity : AppCompatActivity() {
                                 action.reply("이미 게임이 시작되어 있어요.")
                             }
                         }
-                        equals("초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
-                        equals("초성힌트") && chosungAnswer.isNotBlank() -> {
+                        equals(".초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
+                        equals(".초성힌트") && chosungAnswer.isNotBlank() -> {
                             if (chosungHintCount == chosungAnswer.length - 1) {
                                 action.reply("마지막 단어는 혼자서 해봐요!")
                             } else {
