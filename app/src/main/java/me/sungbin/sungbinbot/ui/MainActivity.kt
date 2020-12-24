@@ -12,6 +12,10 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.extensions.join
 import com.sungbin.androidutils.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import me.sungbin.gamepack.library.Game
 import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
@@ -142,12 +146,16 @@ class MainActivity : AppCompatActivity() {
                             }% 만큼 남았어요!"
                         )
                         equals(".한강") -> {
-                            val data = getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
-                            val json = JSONObject(data)
-                            val temp = json.getString("temp")
-                            val time = json.getString("time").split("년 ")[1]
-                            val value = "$time 기준 현재 한강은 $temp 이에요!"
-                            action.reply(value)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val data = async {
+                                    getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
+                                }
+                                val json = JSONObject(data.await())
+                                val temp = json.getString("temp")
+                                val time = json.getString("time").split("년 ")[1]
+                                val value = "$time 기준 현재 한강은 $temp 이에요!"
+                                action.reply(value)
+                            }
                         }
                         equals(".끝말잇기") -> {
                             if (isWordChaining) {
