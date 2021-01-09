@@ -2,7 +2,6 @@ package me.sungbin.sungbinbot.ui
 
 import android.Manifest
 import android.app.Notification
-import android.app.RemoteInput
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
@@ -17,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import me.sungbin.gamepack.library.Game
+import me.sungbin.gamepack.library.game.chosung.ChosungType
 import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
 
     private val showAll = "\u200b".repeat(500)
-    private var replyTime = System.currentTimeMillis()
     private val timeFormat = SimpleDateFormat("yyMMdd.kkmmss", Locale.KOREA)
     private val version by lazy { timeFormat.format(Date()) }
 
@@ -126,7 +125,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // todo: 엑티비티에서 다 처리하면 안되는데;;;;;
+        // todo: 엑티비티에서 다 처리하면 안되는데!!!!
         bot.setMessageReceiveListener { sender, message, room, isGroupChat, action, profileImage, packageName, bot ->
             try {
                 with(message) {
@@ -263,18 +262,64 @@ class MainActivity : AppCompatActivity() {
                                 action.reply("해당 단어($input)는 없는 단어에요!\n다른 단어를 입력해 주세요 :)")
                             }
                         }
-                        equals(".초성게임") || equals(".초성퀴즈") -> {
-                            if (chosungAnswer.isBlank()) {
-                                val quiz = Game.chosungQuiz()
-                                val type = quiz[0] as String
-                                val answer = quiz[1] as String
-                                val chosung = (quiz[2] as ArrayList<*>).join("")
-                                val value =
-                                    "$type 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
-                                chosungAnswer = answer
-                                action.reply(value)
+                        contains(".초성게임") || contains(".초성퀴즈") -> {
+                            if (length == 5) {
+                                if (chosungAnswer.isBlank()) {
+                                    val quiz = Game.chosungQuiz()
+                                    val type = quiz[0] as String
+                                    val answer = quiz[1] as String
+                                    val chosung = (quiz[2] as ArrayList<*>).join("")
+                                    val value =
+                                        "$type 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
+                                    chosungAnswer = answer
+                                    action.reply(value)
+                                } else {
+                                    action.reply("이미 게임이 시작되어 있어요.")
+                                }
                             } else {
-                                action.reply("이미 게임이 시작되어 있어요.")
+                                val typeList = arrayOf(
+                                    "음식",
+                                    "국내가수",
+                                    "국가",
+                                    "도시",
+                                    "수학",
+                                    "스포츠",
+                                    "브랜드",
+                                    "원소",
+                                    "포켓몬",
+                                    "화학",
+                                    "단어"
+                                )
+                                val type = split(" ")[1]
+                                if (typeList.contains(type)) {
+                                    if (chosungAnswer.isBlank()) {
+                                        val quiz = when (typeList.indexOf(type)) {
+                                            0 -> Game.chosungQuiz(ChosungType.FOOD())
+                                            1 -> Game.chosungQuiz(ChosungType.ARTIST())
+                                            2 -> Game.chosungQuiz(ChosungType.COUNTRY())
+                                            3 -> Game.chosungQuiz(ChosungType.LOCATION())
+                                            4 -> Game.chosungQuiz(ChosungType.MATH())
+                                            5 -> Game.chosungQuiz(ChosungType.SPORT())
+                                            6 -> Game.chosungQuiz(ChosungType.BRAND())
+                                            7 -> Game.chosungQuiz(ChosungType.ELEMENT())
+                                            8 -> Game.chosungQuiz(ChosungType.POCKETMON())
+                                            9 -> Game.chosungQuiz(ChosungType.CHEMISTRY())
+                                            else -> Game.chosungQuiz(ChosungType.WORDS())
+                                        }
+                                        val answer = quiz[1] as String
+                                        val chosung = (quiz[2] as ArrayList<*>).join("")
+                                        val value =
+                                            "${quiz[0] as String} 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
+                                        chosungAnswer = answer
+                                        action.reply(value)
+                                    } else {
+                                        action.reply("이미 게임이 시작되어 있어요.")
+                                    }
+                                } else {
+                                    action.reply("$type 은 존재하지 않는 타입이에요!\n\n[사용 가능 타입]\n${
+                                        typeList.joinToString("\n")
+                                    }")
+                                }
                             }
                         }
                         equals(".초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
@@ -330,28 +375,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun Notification.Action.reply(message: String) {
-        if (System.currentTimeMillis() - replyTime >= 1000) {
-            bot.reply(this, message.trim())
-            replyTime = System.currentTimeMillis()
-        }
-    }
-
-    private fun reply(
-        action: Notification.Action,
-        message: String,
-        exception: (Exception) -> Unit = {}
-    ) {
-        try {
-            val sendIntent = Intent()
-            val msg = Bundle()
-            for (inputable in action.remoteInputs) msg.putCharSequence(
-                inputable.resultKey,
-                message
-            )
-            RemoteInput.addResultsToIntent(action.remoteInputs, sendIntent, msg)
-            action.actionIntent.send(applicationContext, 0, sendIntent)
-        } catch (exception: Exception) {
-            exception(exception)
-        }
+        bot.reply(this, message.trim())
     }
 }
