@@ -14,6 +14,8 @@ import java.util.*
 
 class WcGame : BotWrapper() {
 
+    // todo: WORDS 싱글톤 X
+
     private var wcIsGaming = false
     private var wcLastWords = ArrayList<String>()
     private var wcTurn = 0
