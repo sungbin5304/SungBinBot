@@ -5,6 +5,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import me.sungbin.sungbinbot.bot.Bot.getHtml
+import me.sungbin.sungbinbot.bot.Bot.reply
+import me.sungbin.sungbinbot.bot.Bot.winSubApiKey
 import org.json.JSONObject
 
 
@@ -12,7 +15,7 @@ import org.json.JSONObject
  * Created by SungBin on 2021-01-11.
  */
 
-class Tool : Bot() {
+class Tool : BotWrapper() {
 
     fun information(action: Notification.Action) {
         action.reply("현재 저의 단위는 `${super.toString()}` 이에요.")

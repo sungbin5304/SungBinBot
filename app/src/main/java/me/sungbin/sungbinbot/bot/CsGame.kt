@@ -3,6 +3,7 @@ package me.sungbin.sungbinbot.bot
 import android.app.Notification
 import com.sungbin.androidutils.extensions.join
 import me.sungbin.gamepack.library.game.chosung.ChosungType
+import me.sungbin.sungbinbot.bot.Bot.reply
 import me.sungbin.sungbinbot.util.KoreanUtil
 
 
@@ -10,7 +11,7 @@ import me.sungbin.sungbinbot.util.KoreanUtil
  * Created by SungBin on 2021-01-11.
  */
 
-class CsGame : Bot() {
+class CsGame : BotWrapper() {
 
     private var csAnwser = ""
     private var csHintCount = 0

@@ -16,7 +16,7 @@ class SungBinBot : Application() {
     override fun onCreate() {
         super.onCreate()
         Firebase.remoteConfig.fetchAndActivate()
-        Bot().init(applicationContext)
+        Bot.init(applicationContext)
         NotificationUtil.createChannel(
             applicationContext,
             getString(R.string.app_name),

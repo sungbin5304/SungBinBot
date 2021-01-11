@@ -1,7 +1,7 @@
 package me.sungbin.sungbinbot.viewmodel
 
 import androidx.lifecycle.ViewModel
-import me.sungbin.sungbinbot.bot.Bot
+import me.sungbin.sungbinbot.bot.BotWrapper
 
 
 /**
@@ -10,6 +10,6 @@ import me.sungbin.sungbinbot.bot.Bot
 
 class BotViewModel : ViewModel() {
 
-    val bots = HashMap<String, Array<Bot>>()
+    val bots = HashMap<String, Array<BotWrapper>>()
 
 }

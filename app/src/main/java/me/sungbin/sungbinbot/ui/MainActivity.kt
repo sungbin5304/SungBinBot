@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getBotsInstance(room: String): Array<Bot> {
+    private fun getBotsInstance(room: String): Array<BotWrapper> {
         return if (vm.bots[room] == null) {
             vm.bots[room] = arrayOf(CsGame(), WcGame(), Message(), Tool())
             return vm.bots[room]!!

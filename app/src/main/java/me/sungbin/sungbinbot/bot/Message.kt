@@ -1,6 +1,8 @@
 package me.sungbin.sungbinbot.bot
 
 import android.app.Notification
+import me.sungbin.sungbinbot.bot.Bot.context
+import me.sungbin.sungbinbot.bot.Bot.reply
 import me.sungbin.sungbinbot.util.Util
 
 
@@ -8,7 +10,7 @@ import me.sungbin.sungbinbot.util.Util
  * Created by SungBin on 2021-01-11.
  */
 
-class Message : Bot() {
+class Message : BotWrapper() {
 
     fun live(action: Notification.Action) {
         action.reply(

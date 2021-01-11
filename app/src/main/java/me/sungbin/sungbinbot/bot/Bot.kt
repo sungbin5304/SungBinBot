@@ -1,27 +1,26 @@
 package me.sungbin.sungbinbot.bot
 
 import android.app.Notification
+import android.app.RemoteInput
 import android.content.Context
+import android.content.Intent
+import android.os.Bundle
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
-import me.sungbin.gamepack.library.game.wordchain.Word
-import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import org.jsoup.Jsoup
 
-open class Bot {
+object Bot {
 
     lateinit var context: Context
-    private lateinit var bot: KakaoBot
+    val winSubApiKey by lazy { Firebase.remoteConfig.getString("winSubApiKey") }
     private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
 
-    val winSubApiKey by lazy { Firebase.remoteConfig.getString("winSubApiKey") }
 
     val commends = arrayOf(".끝말잇기", ".초성퀴즈 / .초성게임", ".한강", ".가르치기", ".살았니 / .죽었니", ".배터리")
     val commendsDescription = arrayOf("")
 
     fun init(context: Context) {
         this.context = context
-        Word.init(context, koreanApiKey)
     }
 
     fun jsoupOf(address: String) = Jsoup.connect(address).ignoreContentType(true)
@@ -35,7 +34,18 @@ open class Bot {
     }
 
     fun Notification.Action.reply(message: String) {
-        bot.reply(this, message.trim())
+        try {
+            val sendIntent = Intent()
+            val msg = Bundle()
+            for (inputable in this.remoteInputs) msg.putCharSequence(
+                inputable.resultKey,
+                message.trim()
+            )
+            RemoteInput.addResultsToIntent(this.remoteInputs, sendIntent, msg)
+            this.actionIntent.send(context, 0, sendIntent)
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+        }
     }
 
 }

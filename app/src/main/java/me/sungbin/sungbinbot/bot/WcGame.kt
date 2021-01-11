@@ -3,6 +3,7 @@ package me.sungbin.sungbinbot.bot
 import android.app.Notification
 import com.sungbin.androidutils.extensions.join
 import me.sungbin.gamepack.library.game.wordchain.Word
+import me.sungbin.sungbinbot.bot.Bot.reply
 import me.sungbin.sungbinbot.util.KoreanUtil
 import java.util.*
 
@@ -11,7 +12,7 @@ import java.util.*
  * Created by SungBin on 2021-01-11.
  */
 
-class WcGame : Bot() {
+class WcGame : BotWrapper() {
 
     private var wcIsGaming = false
     private var wcLastWords = ArrayList<String>()
