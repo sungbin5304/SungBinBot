@@ -8,19 +8,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
-import com.sungbin.androidutils.extensions.join
 import com.sungbin.androidutils.util.*
-import me.sungbin.gamepack.library.Game
-import me.sungbin.gamepack.library.game.chosung.ChosungType
-import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.bot.Bot
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
-import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
-import me.sungbin.sungbinbot.util.Util
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -107,225 +101,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // todo: 엑티비티에서 다 처리하면 안되는데!!!!
         bot.setMessageReceiveListener { sender, message, room, isGroupChat, a, profileImage, packageName, bot ->
             try {
                 with(message) {
                     when {
-                        equals(".즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
+                        equals(".즈모봇") -> Bot.Message.version(a, version)
                         equals(".살았니") || equals(".죽었니") -> Bot.Message.live(a)
-                        equals(".배터리") -> action.reply(
-                            "현재 저의 수명은 ${
-                                Util.getBatteryPercentage(
-                                    applicationContext
-                                )
-                            }% 만큼 남았어요!"
-                        )
-                        equals(".한강") -> Bot.Tool.hangal(a)
-                        equals(".끝말잇기") -> {
-                            if (isWordChaining) {
-                                action.reply("끝말잇기가 종료되었어요.")
-                                isWordChaining = false
-                                lastWord.clear()
-                                Word.clearUseWord()
-                            } else {
-                                isWordChaining = true
-                                action.reply("끝말잇기가 시작되었어요!\n\n,단어 로 게임을 진행해 주세요.")
-                            }
-                        }
-                        startsWith(",") && isWordChaining && message.length >= 3 -> {
-                            val input = message.replace(",", "")
-                            val firstWord = input.first().toString()
-                            if (Word.isRealWord(input)) {
-                                if (!Word.checkIsUsed(input)) {
-                                    if (lastWord.isNotEmpty() && lastWord.contains(firstWord)) {
-                                        Word.useWord(input)
-                                        val replyWord = Word.loadUseableWord(input)
-                                        if (replyWord != null) { // 사용 가능한 단어가 있을 때
-                                            val duum = Word.checkDuum(replyWord)
-                                            lastWord = if (duum != null) { // 두음 사용 가능함
-                                                arrayListOf(replyWord.last().toString(), duum)
-                                            } else {
-                                                arrayListOf(replyWord.last().toString())
-                                            }
-                                            action.reply(
-                                                "저는 $replyWord${
-                                                    KoreanUtil.getJongsung(
-                                                        replyWord,
-                                                        "을",
-                                                        "를"
-                                                    )
-                                                } 쓸게요!\n\n- ${Word.getWordMean(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
-                                                    lastWord.join(
-                                                        " 또는 "
-                                                    )
-                                                }${
-                                                    KoreanUtil.getJongsung(
-                                                        lastWord.last(),
-                                                        "으로",
-                                                        "로"
-                                                    )
-                                                } 계속 진행해주세요 :)"
-                                            )
-                                        } else { // 사용 가능한 단어가 없을 때
-                                            action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
-                                            isWordChaining = false
-                                            lastWord.clear()
-                                            Word.clearUseWord()
-                                        }
-                                    } else {
-                                        if (lastWord.isNotEmpty()) {
-                                            action.reply(
-                                                "${lastWord.join(" 또는 ")} ${
-                                                    KoreanUtil.getJongsung(
-                                                        lastWord.last(),
-                                                        "으로",
-                                                        "로"
-                                                    )
-                                                } 시작하는 단어를 입력해 주세요!"
-                                            )
-                                        } else {
-                                            Word.useWord(input)
-                                            val replyWord = Word.loadUseableWord(input)
-                                            if (replyWord != null) { // 사용 가능한 단어가 있을 때
-                                                val duum = Word.checkDuum(replyWord)
-                                                lastWord = if (duum != null) { // 두음 사용 가능함
-                                                    arrayListOf(replyWord.last().toString(), duum)
-                                                } else {
-                                                    arrayListOf(replyWord.last().toString())
-                                                }
-                                                action.reply(
-                                                    "저는 $replyWord${
-                                                        KoreanUtil.getJongsung(
-                                                            replyWord,
-                                                            "을",
-                                                            "를"
-                                                        )
-                                                    } 쓸게요!\n\n- ${Word.getWordMean(replyWord) ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$replyWord"}\n\n${
-                                                        lastWord.join(
-                                                            " 또는 "
-                                                        )
-                                                    }${
-                                                        KoreanUtil.getJongsung(
-                                                            lastWord.last(),
-                                                            "으로",
-                                                            "로"
-                                                        )
-                                                    } 계속 진행해주세요 :)"
-                                                )
-                                            } else { // 사용 가능한 단어가 없을 때
-                                                action.reply("사용 가능한 단어가 없어요 :(\n제가 졌어요!\n\n끝말잇기가 종료됩니다.")
-                                                isWordChaining = false
-                                                lastWord.clear()
-                                                Word.clearUseWord()
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    action.reply("헤당 단어($input)는 이미 사용되었어요!\n다른 단어를 입력해 주세요 :)")
-                                }
-                            } else {
-                                action.reply("해당 단어($input)는 없는 단어에요!\n다른 단어를 입력해 주세요 :)")
-                            }
-                        }
-                        contains(".초성게임") || contains(".초성퀴즈") -> {
-                            if (length == 5) {
-                                if (chosungAnswer.isBlank()) {
-                                    val quiz = Game.chosungQuiz()
-                                    val type = quiz[0] as String
-                                    val answer = quiz[1] as String
-                                    val chosung = (quiz[2] as ArrayList<*>).join("")
-                                    val value =
-                                        "$type 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
-                                    chosungAnswer = answer
-                                    action.reply(value)
-                                } else {
-                                    action.reply("이미 게임이 시작되어 있어요.")
-                                }
-                            } else {
-                                val typeList = arrayOf(
-                                    "간식",
-                                    "국내가수",
-                                    "국가",
-                                    "도시",
-                                    "수학",
-                                    "스포츠",
-                                    "브랜드",
-                                    "원소",
-                                    "포켓몬",
-                                    "화학",
-                                    "단어"
-                                )
-                                val type = split(" ")[1]
-                                if (typeList.contains(type)) {
-                                    if (chosungAnswer.isBlank()) {
-                                        val quiz = when (typeList.indexOf(type)) {
-                                            0 -> Game.chosungQuiz(ChosungType.FOOD())
-                                            1 -> Game.chosungQuiz(ChosungType.ARTIST())
-                                            2 -> Game.chosungQuiz(ChosungType.COUNTRY())
-                                            3 -> Game.chosungQuiz(ChosungType.LOCATION())
-                                            4 -> Game.chosungQuiz(ChosungType.MATH())
-                                            5 -> Game.chosungQuiz(ChosungType.SPORT())
-                                            6 -> Game.chosungQuiz(ChosungType.BRAND())
-                                            7 -> Game.chosungQuiz(ChosungType.ELEMENT())
-                                            8 -> Game.chosungQuiz(ChosungType.POCKETMON())
-                                            9 -> Game.chosungQuiz(ChosungType.CHEMISTRY())
-                                            else -> Game.chosungQuiz(ChosungType.WORDS())
-                                        }
-                                        val answer = quiz[1] as String
-                                        val chosung = (quiz[2] as ArrayList<*>).join("")
-                                        val value =
-                                            "${quiz[0] as String} 에 대한 초성입니다!\n\n- $chosung\n\n.정답 으로 정답을 입력해 주세요!"
-                                        chosungAnswer = answer
-                                        action.reply(value)
-                                    } else {
-                                        action.reply("이미 게임이 시작되어 있어요.")
-                                    }
-                                } else {
-                                    action.reply("$type 은 존재하지 않는 타입이에요!\n\n[사용 가능 타입]\n${
-                                        typeList.joinToString("\n")
-                                    }")
-                                }
-                            }
-                        }
-                        equals(".초성정답") && chosungAnswer.isNotBlank() -> action.reply("초성게임의 정답은 $chosungAnswer 이였어요!")
-                        equals(".초성힌트") && chosungAnswer.isNotBlank() -> {
-                            if (chosungHintCount == chosungAnswer.length - 1) {
-                                action.reply("마지막 단어는 혼자서 해봐요!")
-                            } else {
-                                action.reply("정답의 ${chosungHintCount + 1}번째 글자는 ${chosungAnswer[chosungHintCount]} 이에요.")
-                                chosungHintCount++
-                            }
-                        }
-                        startsWith(".") && chosungAnswer.isNotBlank() -> {
-                            val input = message.replace(".", "")
-                            if (input == chosungAnswer) {
-                                action.reply("정답이에요!")
-                                chosungAnswer = ""
-                                chosungHintCount = 0
-                            } else {
-                                action.reply(
-                                    "땡! $input ${
-                                        KoreanUtil.getJongsung(
-                                            input,
-                                            "은",
-                                            "는"
-                                        )
-                                    } 정답이 아니에요.\n\n정답 유사도 : ${
-                                        KoreanUtil.checkSameWord(
-                                            input,
-                                            chosungAnswer
-                                        )
-                                    }%"
-                                )
-                            }
-                        }
+                        equals(".배터리") -> Bot.Message.battery(a)
+                        equals(".한강") -> Bot.Tool.hangang(a)
+                        equals(".끝말잇기") -> Bot.Game.Wc.power(a)
+                        startsWith("wc") -> Bot.Game.Wc.game(a, message)
+                        contains(".초성게임") || contains(".초성퀴즈") -> Bot.Game.Cs.power(a, message)
+                        equals(".초성정답") -> Bot.Game.Cs.gg(a)
+                        equals(".초성힌트") -> Bot.Game.Cs.hint(a)
+                        startsWith("cs") -> Bot.Game.Cs.game(a, message)
                         else -> Unit
                     }
                 }
             } catch (exception: Exception) {
-                action.reply("봇 작동중 오류가 발생했어요 \uD83D\uDE2D\n\n$exception")
-                exception.printStackTrace()
+                Bot.Tool.exception(a, exception)
             }
         }
     }
