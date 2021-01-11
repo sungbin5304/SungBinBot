@@ -1,7 +1,6 @@
 package me.sungbin.sungbinbot.ui
 
 import android.Manifest
-import android.app.Notification
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
@@ -11,22 +10,17 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.extensions.join
 import com.sungbin.androidutils.util.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import me.sungbin.gamepack.library.Game
 import me.sungbin.gamepack.library.game.chosung.ChosungType
 import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
+import me.sungbin.sungbinbot.bot.Bot
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.KoreanUtil
 import me.sungbin.sungbinbot.util.PathManager
 import me.sungbin.sungbinbot.util.Util
-import org.json.JSONObject
-import org.jsoup.Jsoup
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,27 +29,15 @@ class MainActivity : AppCompatActivity() {
     private val bot by lazy { KakaoBot() }
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val licenseKey by lazy { Firebase.remoteConfig.getString("licenseKey") }
-    private val winSubApiKey by lazy { Firebase.remoteConfig.getString("winSubApiKey") }
-    private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
 
     private val showAll = "\u200b".repeat(500)
     private val timeFormat = SimpleDateFormat("yyMMdd.kkmmss", Locale.KOREA)
     private val version by lazy { timeFormat.format(Date()) }
 
-    // 초성게임
-    private var chosungAnswer = ""
-    private var chosungHintCount = 0
-
-    // 끝말잇기
-    private var isWordChaining = false
-    private var lastWord = ArrayList<String>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        Logger.w(koreanApiKey)
-        Word.init(applicationContext, koreanApiKey)
         binding.tvVersion.text = getString(R.string.main_version, version)
 
         bot.init(applicationContext)
@@ -126,17 +108,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         // todo: 엑티비티에서 다 처리하면 안되는데!!!!
-        bot.setMessageReceiveListener { sender, message, room, isGroupChat, action, profileImage, packageName, bot ->
+        bot.setMessageReceiveListener { sender, message, room, isGroupChat, a, profileImage, packageName, bot ->
             try {
                 with(message) {
                     when {
                         equals(".즈모봇") -> action.reply("즈모봇 버전 $version 가동중...")
-                        equals(".살았니") || equals(".죽었니") -> action.reply(
-                            arrayOf(
-                                "죽었다!",
-                                "살았다!"
-                            ).random()
-                        )
+                        equals(".살았니") || equals(".죽었니") -> Bot.Message.live(a)
                         equals(".배터리") -> action.reply(
                             "현재 저의 수명은 ${
                                 Util.getBatteryPercentage(
@@ -144,18 +121,7 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }% 만큼 남았어요!"
                         )
-                        equals(".한강") -> {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val data = async {
-                                    getHtml("https://api.winsub.kr/hangang/?key=$winSubApiKey")
-                                }
-                                val json = JSONObject(data.await())
-                                val temp = json.getString("temp")
-                                val time = json.getString("time").split("년 ")[1]
-                                val value = "$time 기준 현재 한강은 $temp 이에요!"
-                                action.reply(value)
-                            }
-                        }
+                        equals(".한강") -> Bot.Tool.hangal(a)
                         equals(".끝말잇기") -> {
                             if (isWordChaining) {
                                 action.reply("끝말잇기가 종료되었어요.")
@@ -278,7 +244,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             } else {
                                 val typeList = arrayOf(
-                                    "음식",
+                                    "간식",
                                     "국내가수",
                                     "국가",
                                     "도시",
@@ -362,19 +328,5 @@ class MainActivity : AppCompatActivity() {
                 exception.printStackTrace()
             }
         }
-    }
-
-    private fun jsoupOf(address: String) = Jsoup.connect(address).ignoreContentType(true)
-        .ignoreHttpErrors(true)
-
-    private fun getHtml(address: String): String {
-        var data = jsoupOf(address).get().toString().trim()
-        if (data.contains("<body>")) data =
-            data.split("<body>")[1].split("</body>")[0]
-        return data
-    }
-
-    private fun Notification.Action.reply(message: String) {
-        bot.reply(this, message.trim())
     }
 }
