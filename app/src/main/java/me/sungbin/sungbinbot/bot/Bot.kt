@@ -13,7 +13,6 @@ object Bot {
 
     lateinit var context: Context
     val winSubApiKey by lazy { Firebase.remoteConfig.getString("winSubApiKey") }
-    private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
 
 
     val commends = arrayOf(".끝말잇기", ".초성퀴즈 / .초성게임", ".한강", ".가르치기", ".살았니 / .죽었니", ".배터리")

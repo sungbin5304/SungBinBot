@@ -68,7 +68,7 @@ class WcGame : BotWrapper() {
                                 } 계속 진행해주세요 :)"
                             )
                         } else { // 사용 가능한 단어가 없을 때
-                            action.reply("사용 가능한 단어가 없어요 :(\n${action}턴 만에 제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                            action.reply("사용 가능한 단어가 없어요 :(\n${wcTurn}턴 만에 제가 졌어요!\n\n끝말잇기가 종료됩니다.")
                             clearGame()
                         }
                     } else { // 첫 번째 턴 이거나 끝말이 일치하지 않을 때
@@ -112,7 +112,7 @@ class WcGame : BotWrapper() {
                                     } 계속 진행해주세요 :)"
                                 )
                             } else { // 사용 가능한 단어가 없을 때
-                                action.reply("사용 가능한 단어가 없어요 :(\n${action}턴 만에 제가 졌어요!\n\n끝말잇기가 종료됩니다.")
+                                action.reply("사용 가능한 단어가 없어요 :(\n${wcTurn}턴 만에 제가 졌어요!\n\n끝말잇기가 종료됩니다.")
                                 clearGame()
                             }
                         }

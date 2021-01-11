@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.util.*
+import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
 import me.sungbin.sungbinbot.bot.*
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private val bot by lazy { KakaoBot() }
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val licenseKey by lazy { Firebase.remoteConfig.getString("licenseKey") }
+    private val koreanApiKey by lazy { Firebase.remoteConfig.getString("koreanApiKey") }
 
     private val showAll = "\u200b".repeat(500)
     private val timeFormat = SimpleDateFormat("yyMMdd.kkmmss", Locale.KOREA)
@@ -39,6 +41,8 @@ class MainActivity : AppCompatActivity() {
 
         bot.init(applicationContext)
         bot.requestReadNotification()
+
+        Word.init(applicationContext, koreanApiKey)
 
         BatteryUtil.requestIgnoreBatteryOptimization(applicationContext)
         PermissionUtil.request(
