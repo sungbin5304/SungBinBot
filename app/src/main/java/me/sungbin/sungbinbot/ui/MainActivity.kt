@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.ktx.Firebase
@@ -11,15 +12,17 @@ import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.sungbin.androidutils.util.*
 import me.sungbin.kakaotalkbotbasemodule.library.KakaoBot
 import me.sungbin.sungbinbot.R
-import me.sungbin.sungbinbot.bot.Bot
+import me.sungbin.sungbinbot.bot.*
 import me.sungbin.sungbinbot.databinding.ActivityMainBinding
 import me.sungbin.sungbinbot.service.ForgroundService
 import me.sungbin.sungbinbot.util.PathManager
+import me.sungbin.sungbinbot.viewmodel.BotViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
+    private val vm: BotViewModel by viewModels()
     private val bot by lazy { KakaoBot() }
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val licenseKey by lazy { Firebase.remoteConfig.getString("licenseKey") }
@@ -101,26 +104,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        bot.setMessageReceiveListener { sender, message, room, isGroupChat, a, profileImage, packageName, bot ->
+        bot.setMessageReceiveListener { sender, chatMessage, room, isGroupChat, action, profileImage, packageName, bot ->
             try {
-                with(message) {
+                val (_CsGame, _WcGame, _Message, _Tool) = getBotsInstance(room)
+                val csGame = _CsGame as CsGame
+                val wcGame = _WcGame as WcGame
+                val message = _Message as Message
+                val tool = _Tool as Tool
+                with(chatMessage) {
                     when {
-                        equals(".즈모봇") -> Bot.Message.version(a, version)
-                        equals(".살았니") || equals(".죽었니") -> Bot.Message.live(a)
-                        equals(".배터리") -> Bot.Message.battery(a)
-                        equals(".한강") -> Bot.Tool.hangang(a)
-                        equals(".끝말잇기") -> Bot.Game.Wc.power(a)
-                        startsWith("wc") -> Bot.Game.Wc.game(a, message)
-                        contains(".초성게임") || contains(".초성퀴즈") -> Bot.Game.Cs.power(a, message)
-                        equals(".초성정답") -> Bot.Game.Cs.gg(a)
-                        equals(".초성힌트") -> Bot.Game.Cs.hint(a)
-                        startsWith("cs") -> Bot.Game.Cs.game(a, message)
+                        equals(".단위") -> tool.information(action)
+                        equals(".즈모봇") -> message.version(action, version)
+                        equals(".살았니") || equals(".죽었니") -> message.live(action)
+                        equals(".배터리") -> message.battery(action)
+                        equals(".한강") -> tool.hangang(action)
+                        equals(".끝말잇기") -> wcGame.power(action)
+                        startsWith("wc") -> wcGame.game(action, chatMessage)
+                        contains(".초성게임") || contains(".초성퀴즈") -> csGame.power(action, chatMessage)
+                        equals(".초성정답") -> csGame.gg(action)
+                        equals(".초성힌트") -> csGame.hint(action)
+                        startsWith("cs") -> csGame.game(action, chatMessage)
                         else -> Unit
                     }
                 }
             } catch (exception: Exception) {
-                Bot.Tool.exception(a, exception)
+                bot.reply(action, "봇 작동중 오류가 발생했어요 \uD83D\uDE2D\n\n${exception.localizedMessage}")
+                exception.printStackTrace()
             }
         }
+    }
+
+    private fun getBotsInstance(room: String): Array<Bot> {
+        return if (vm.bots[room] == null) {
+            vm.bots[room] = arrayOf(CsGame(), WcGame(), Message(), Tool())
+            return vm.bots[room]!!
+        } else vm.bots[room]!!
     }
 }
