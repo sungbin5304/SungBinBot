@@ -1,6 +1,7 @@
 package me.sungbin.sungbinbot.bot
 
 import android.app.Notification
+import android.text.Html
 import com.sungbin.androidutils.extensions.join
 import me.sungbin.gamepack.library.game.wordchain.Word
 import me.sungbin.sungbinbot.bot.Bot.reply
@@ -137,7 +138,12 @@ class WcGame : BotWrapper() {
         Word.clearUseWord()
     }
 
-    private fun getWordMean(fullword: String) = Word.getWordMean(fullword)
-        ?: "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$fullword"
+    private fun getWordMean(fullword: String): String {
+        val mean = Word.getWordMean(fullword)
+        return if (mean == null) "[단어 뜻 추출 실패]\nhttps://opendic.korean.go.kr/search/searchResult?focus_name_top=query&query=$fullword"
+        else {
+            Html.fromHtml(mean.toString(), Html.FROM_HTML_MODE_COMPACT).toString()
+        }
+    }
 
 }
